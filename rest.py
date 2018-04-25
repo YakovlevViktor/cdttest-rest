@@ -1,4 +1,5 @@
 import sys
+import json
 from datetime import datetime
 
 from flask import Flask
@@ -22,6 +23,16 @@ class Batch(db.Model):
     datetime = db.Column('datetime', db.DateTime, default=datetime.now())
     status = db.Column('status', db.String, default='OK')
 
+    def toJSON(self):
+        res = {
+            "id": self.id,
+            "file_in": self.file_in,
+            "file_out": self.file_out,
+            "datetime": str(self.datetime),
+            "status": self.status
+        }
+        return res
+
 
 class Task(db.Model):
     id = db.Column('id', db.Integer, primary_key=True)
@@ -29,3 +40,15 @@ class Task(db.Model):
     status = db.Column('status', db.String)
     batch__oid = db.Column('batch__oid', db.Integer, db.ForeignKey('batch.id'), nullable=False)
     batch = db.relationship('Batch', backref=db.backref('tasks', lazy=True))
+
+
+@app.route('/cdtest/api/v1.0/batch/<int:batch_id>', methods=['GET'])
+def get_batch(batch_id):
+    res = db.session.query(Batch).get(batch_id)
+    res = res.toJSON()
+    return json.dumps(res)
+    # res = json.dumps(res)
+    # return res
+
+
+app.run()
