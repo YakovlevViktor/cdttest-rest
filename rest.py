@@ -52,33 +52,41 @@ class Task(db.Model):
         return res
 
 
+def make_json_from_db_list(list_in, key):
+    json_data = {key: []}
+    for list_item in list_in:
+        json_item = list_item.toJSON()
+        json_data[key].append(json_item)
+    return json_data
+
+
+# e.g. http://localhost:5000/cdtest/api/v1.0/batch/id/1
 @app.route('/cdtest/api/v1.0/batch/id/<int:batch_id>', methods=['GET'])
 def get_batch_by_id(batch_id):
-    res = db.session.query(Batch).get(batch_id)
-    res = res.toJSON()
-    return json.dumps(res)
+    task_query_res = db.session.query(Task).filter(Task.batch__oid == batch_id).all()
+    batch_query_res = db.session.query(Batch).get(batch_id)
+    json_data = {"batch": batch_query_res.toJSON()}
+    task_query_res_json = make_json_from_db_list(task_query_res, 'tasks')
+    json_data.update(task_query_res_json)
+    print(json_data)
+    return json.dumps(json_data)
 
 
+# e.g. http://localhost:5000/cdtest/api/v1.0/batch/file/input.json
 @app.route('/cdtest/api/v1.0/batch/file/<string:file_in>', methods=['GET'])
 def get_batch_by_file(file_in):
     res = db.session.query(Batch).filter(Batch.file_in.__eq__(file_in)).all()
-    json_data = {"batch": []}
-    for res_item in res:
-        json_item = res_item.toJSON()
-        print(json_item)
-        json_data["batch"].append(json_item)
+    json_data = make_json_from_db_list(res, 'batch')
     return json.dumps(json_data)
 
+
+# e.g. http://localhost:5000/cdtest/api/v1.0/batch/date?from=2018-04-25T10:00:00&to=2018-04-25T10:38:00
 @app.route('/cdtest/api/v1.0/batch/date', methods=['GET'])
 def get_batch_by_date():
     date_from = request.args.get('from')
     date_to = request.args.get('to')
-    res = db.session.query(Batch).filter(Batch.datetime.between(date_from, date_to))
-    json_data = {"batch": []}
-    for res_item in res:
-        json_item = res_item.toJSON()
-        print(json_item)
-        json_data["batch"].append(json_item)
+    res = db.session.query(Batch).filter(Batch.datetime.between(date_from, date_to)).all()
+    json_data = make_json_from_db_list(res, 'batch')
     return json.dumps(json_data)
 
 
