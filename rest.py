@@ -90,4 +90,15 @@ def get_batch_by_date():
     return json.dumps(json_data)
 
 
+# e.g. http://localhost:5000/cdtest/api/v1.0/batch/failed/date?from=2018-04-25T10:00:00&to=2018-04-25T10:38:00
+@app.route('/cdtest/api/v1.0/batch/failed/date', methods=['GET'])
+def get_failed_batch_by_date():
+    date_from = request.args.get('from')
+    date_to = request.args.get('to')
+    res = db.session.query(Batch).filter(
+        Batch.datetime.between(date_from, date_to)).filter(Batch.status.__eq__("Failed")).all()
+    json_data = make_json_from_db_list(res, 'batch')
+    return json.dumps(json_data)
+
+
 app.run()
